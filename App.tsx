@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { I18nManager, StatusBar, View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 import { StoreProvider } from './src/context/StoreContext';
 import { LicenseService, LicenseData } from './src/services/licenseService';
 
@@ -15,6 +16,9 @@ import { ProductsScreen } from './src/screens/ProductsScreen';
 import { CustomersScreen } from './src/screens/CustomersScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { LicenseActivationScreen } from './src/screens/LicenseActivationScreen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Icons
 import { LayoutDashboard, ShoppingCart, Package, Users, Settings } from 'lucide-react-native';
@@ -136,12 +140,18 @@ export default function App() {
 
   const checkLicense = async () => {
     try {
-      const stored = await LicenseService.getStoredLicense();
-      setLicense(stored);
+      const result = await LicenseService.revalidateStoredLicense();
+      if (result.isValid && result.data) {
+        setLicense(result.data);
+      } else {
+        setLicense(null);
+      }
     } catch (e) {
       console.error('License check error:', e);
+      setLicense(null);
     } finally {
       setIsCheckingLicense(false);
+      await SplashScreen.hideAsync().catch(() => {});
     }
   };
 

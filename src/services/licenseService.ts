@@ -45,6 +45,87 @@ export const LicenseService = {
     return null;
   },
 
+  // بررسی آنلاین و اعتبارسنجی مجدد لایسنس با سرور دیتابیس (حتی برای کاربران قبلی)
+  async revalidateStoredLicense(): Promise<{ isValid: boolean; data?: LicenseData; message?: string }> {
+    try {
+      const stored = await this.getStoredLicense();
+      if (!stored) {
+        return { isValid: false, message: 'هیچ لایسنسی ثبت نشده است.' };
+      }
+
+      const deviceId = await getDeviceId();
+
+      // استعلام مستقیم وضعیت لایسنس از سرور
+      const response = await axios.get(SUPABASE_BASE_URL + '/licenses', {
+        params: {
+          license_key: 'eq.' + stored.license_key.trim().toUpperCase(),
+          select: '*',
+        },
+        headers: {
+          apikey: SUPABASE_SECRET_KEY,
+          Authorization: 'Bearer ' + SUPABASE_SECRET_KEY,
+        },
+        timeout: 7000,
+      });
+
+      const records = response.data;
+
+      // اگر رکورد حذف شده باشد یا جدول وجود نداشته باشد
+      if (!records || records.length === 0) {
+        await this.removeLicense();
+        return { isValid: false, message: 'این لایسنس از سرور حذف شده یا نامعتبر است.' };
+      }
+
+      const license = records[0];
+
+      // بررسی وضعیت لایسنس
+      if (license.status !== 'active') {
+        await this.removeLicense();
+        return { isValid: false, message: 'این لایسنس غیرفعال یا مسدود شده است.' };
+      }
+
+      // بررسی تاریخ انقضا
+      if (license.expires_at) {
+        const expiry = new Date(license.expires_at);
+        if (new Date() > expiry) {
+          await this.removeLicense();
+          return { isValid: false, message: 'لایسنس شما منقضی شده است.' };
+        }
+      }
+
+      // بررسی سخت‌افزاری دستگاه
+      const registeredDevices: string[] = license.registered_devices || [];
+      if (!registeredDevices.includes(deviceId)) {
+        await this.removeLicense();
+        return { isValid: false, message: 'دسترسی این دستگاه به لایسنس لغو شده است.' };
+      }
+
+      // لایسنس معتبر است
+      const updatedInfo: LicenseData = {
+        license_key: license.license_key,
+        buyer_name: license.buyer_name,
+        expires_at: license.expires_at,
+        activated_at: stored.activated_at || Date.now(),
+      };
+      await AsyncStorage.setItem(STORAGE_KEY_LICENSE, JSON.stringify(updatedInfo));
+      return { isValid: true, data: updatedInfo };
+    } catch (err: any) {
+      console.log('Online license revalidation error:', err?.response?.status || err.message);
+      // اگر خطای ۴۰۴ یا ۴۰۰ از دیتابیس بیاید (مثلا حذف جدول یا خطای دیتابیس)
+      if (err?.response?.status === 404 || err?.response?.status === 400 || err?.response?.status === 401) {
+        await this.removeLicense();
+        return { isValid: false, message: 'دسترسی به سیستم لایسنس مسدود شده است.' };
+      }
+
+      // در صورت قطعی موقت اینترنت، اطلاعات کش را بازگردان تا کاربر آفلاین هم اذیت نشود
+      const fallback = await this.getStoredLicense();
+      if (fallback) {
+        return { isValid: true, data: fallback };
+      }
+      return { isValid: false, message: 'خطا در ارتباط با سرور لایسنس.' };
+    }
+  },
+
   // اعتبارسنجی و فعال‌سازی لایسنس جدید
   async verifyAndActivate(licenseKey: string): Promise<{ success: boolean; message: string; data?: LicenseData }> {
     try {

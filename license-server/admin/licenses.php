@@ -7,25 +7,25 @@ $db = getDB();
 $message = '';
 $error = '';
 
-// ???????
+// اکشن‌ها
 $action = $_GET['action'] ?? '';
 $id = intval($_GET['id'] ?? 0);
 
-// ??? ??????
+// حذف لایسنس
 if ($action === 'delete' && $id > 0) {
     $db->prepare("DELETE FROM licenses WHERE id = ?")->execute([$id]);
     header('Location: licenses.php?msg=deleted');
     exit;
 }
 
-// ???? ???? ?????????? ????
+// ریست کردن دستگاه‌های متصل
 if ($action === 'reset_devices' && $id > 0) {
     $db->prepare("UPDATE licenses SET registered_devices = '[]' WHERE id = ?")->execute([$id]);
     header('Location: licenses.php?msg=devices_reset');
     exit;
 }
 
-// ????? ????? (???? / ?????)
+// تغییر وضعیت (فعال / مسدود)
 if ($action === 'toggle_status' && $id > 0) {
     $lic = $db->prepare("SELECT status FROM licenses WHERE id = ?");
     $lic->execute([$id]);
@@ -38,7 +38,7 @@ if ($action === 'toggle_status' && $id > 0) {
     exit;
 }
 
-// ????? ?????? ????
+// ایجاد لایسنس دستی
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_license'])) {
     $buyerName = trim($_POST['buyer_name'] ?? '');
     $buyerPhone = trim($_POST['buyer_phone'] ?? '');
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_license'])) {
     $maxDevices = intval($_POST['max_devices'] ?? 1);
 
     if (empty($buyerName) || empty($buyerPhone)) {
-        $error = '??? ? ????? ???? ?????? ?????? ???.';
+        $error = 'نام و شماره تماس خریدار الزامی است.';
     } else {
         $key = !empty($customKey) ? strtoupper($customKey) : generateLicenseKey();
         $expiresAt = null;
@@ -62,12 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_license'])) {
             header('Location: licenses.php?msg=created');
             exit;
         } catch (PDOException $e) {
-            $error = '?? ?????? ?????? ??? ?? ????? ?? ???.';
+            $error = 'کد لایسنس تکراری است یا خطایی رخ داد.';
         }
     }
 }
 
-// ????? ????? ??????
+// تمدید تاریخ لایسنس
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['extend_license'])) {
     $licId = intval($_POST['license_id'] ?? 0);
     $addDays = intval($_POST['add_days'] ?? 30);
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['extend_license'])) {
     }
 }
 
-// ????? ? ?????
+// فیلتر و جستجو
 $search = trim($_GET['search'] ?? '');
 $statusFilter = $_GET['status'] ?? 'all';
 
@@ -114,7 +114,7 @@ $licenses = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>?????? ????????? - ??? ??????</title>
+    <title>مدیریت لایسنس‌ها - پنل مدیریت</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/misc/Farsi-Digits/Vazirmatn-FD-font-face.css">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -129,29 +129,29 @@ $licenses = $stmt->fetchAll();
                 <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold">
                     <i data-lucide="key" class="w-5 h-5"></i>
                 </div>
-                <span class="font-bold text-base text-white">??? ?????? ?????? ???????</span>
+                <span class="font-bold text-base text-white">پنل مدیریت لایسنس ووکامرس</span>
             </div>
 
             <div class="flex items-center gap-2 sm:gap-4 text-sm">
                 <a href="index.php" class="px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">???????</span>
+                    <span class="hidden sm:inline">داشبورد</span>
                 </a>
                 <a href="licenses.php" class="px-3 py-2 rounded-xl bg-blue-600/20 text-blue-400 font-semibold flex items-center gap-2">
                     <i data-lucide="key-round" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">?????????</span>
+                    <span class="hidden sm:inline">لایسنس‌ها</span>
                 </a>
                 <a href="plans.php" class="px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
                     <i data-lucide="tag" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">??????</span>
+                    <span class="hidden sm:inline">پلن‌ها</span>
                 </a>
                 <a href="transactions.php" class="px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
                     <i data-lucide="credit-card" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">?????????</span>
+                    <span class="hidden sm:inline">تراکنش‌ها</span>
                 </a>
                 <a href="logout.php" class="px-3 py-2 rounded-xl text-red-400 hover:bg-red-500/10 transition flex items-center gap-2">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">????</span>
+                    <span class="hidden sm:inline">خروج</span>
                 </a>
             </div>
         </div>
@@ -162,12 +162,12 @@ $licenses = $stmt->fetchAll();
         
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-                <h1 class="text-2xl font-extrabold text-white">?????? ?????????</h1>
-                <p class="text-xs text-slate-400 mt-1">??????? ?????? ???? ???? ? ????? ?????? ???????</p>
+                <h1 class="text-2xl font-extrabold text-white">مدیریت لایسنس‌ها</h1>
+                <p class="text-xs text-slate-400 mt-1">مشاهده، جستجو، صدور دستی و کنترل لایسنس کاربران</p>
             </div>
             <button onclick="document.getElementById('createModal').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-blue-600/20">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>???? ?????? ???? ????</span>
+                <span>صدور لایسنس دستی جدید</span>
             </button>
         </div>
 
@@ -181,16 +181,16 @@ $licenses = $stmt->fetchAll();
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6">
             <form method="GET" class="flex flex-col sm:flex-row gap-3">
                 <div class="flex-1 relative">
-                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="????? ?? ???? ?? ??????? ??? ??????? ?? ????? ??????..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500">
+                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="جستجو بر اساس کد لایسنس، نام خریدار، یا شماره موبایل..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <select name="status" class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500">
-                    <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>??? ????????</option>
-                    <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>??? ???????</option>
-                    <option value="blocked" <?= $statusFilter === 'blocked' ? 'selected' : '' ?>>????? ??????</option>
+                    <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>همه وضعیت‌ها</option>
+                    <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>فقط فعال‌ها</option>
+                    <option value="blocked" <?= $statusFilter === 'blocked' ? 'selected' : '' ?>>مسدود شده‌ها</option>
                 </select>
                 <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition">
                     <i data-lucide="search" class="w-4 h-4"></i>
-                    <span>?????</span>
+                    <span>فیلتر</span>
                 </button>
             </form>
         </div>
@@ -201,18 +201,18 @@ $licenses = $stmt->fetchAll();
                 <table class="w-full text-right text-xs">
                     <thead class="bg-slate-800/80 text-slate-400 uppercase text-[11px] border-b border-slate-700">
                         <tr>
-                            <th class="p-4">?? ??????</th>
-                            <th class="p-4">?????? ??????</th>
-                            <th class="p-4">??? / ??????</th>
-                            <th class="p-4">?????????</th>
-                            <th class="p-4">?????</th>
-                            <th class="p-4 text-center">??????</th>
+                            <th class="p-4">کد لایسنس</th>
+                            <th class="p-4">مشخصات خریدار</th>
+                            <th class="p-4">پلن / اعتبار</th>
+                            <th class="p-4">دستگاه‌ها</th>
+                            <th class="p-4">وضعیت</th>
+                            <th class="p-4 text-center">عملیات</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800">
                         <?php if (empty($licenses)): ?>
                             <tr>
-                                <td colspan="6" class="p-8 text-center text-slate-500">??????? ?? ??? ?????? ???? ???.</td>
+                                <td colspan="6" class="p-8 text-center text-slate-500">لایسنسی با این مشخصات یافت نشد.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($licenses as $lic): 
@@ -226,10 +226,10 @@ $licenses = $stmt->fetchAll();
                                     <div class="text-[11px] text-slate-400"><?= htmlspecialchars($lic['buyer_phone']) ?></div>
                                 </td>
                                 <td class="p-4">
-                                    <span class="font-medium text-slate-300"><?= htmlspecialchars($lic['plan_name'] ?? '????') ?></span>
+                                    <span class="font-medium text-slate-300"><?= htmlspecialchars($lic['plan_name'] ?? 'دستی') ?></span>
                                     <div class="text-[11px] <?= $isExpired ? 'text-red-400 font-bold' : 'text-slate-400' ?> mt-0.5">
-                                        <?= $lic['expires_at'] ? date('Y/m/d H:i', strtotime($lic['expires_at'])) : '????? (???? ?????)' ?>
-                                        <?= $isExpired ? '(????? ???)' : '' ?>
+                                        <?= $lic['expires_at'] ? date('Y/m/d H:i', strtotime($lic['expires_at'])) : 'دائمی (بدون انقضا)' ?>
+                                        <?= $isExpired ? '(منقضی شده)' : '' ?>
                                     </div>
                                 </td>
                                 <td class="p-4">
@@ -240,28 +240,28 @@ $licenses = $stmt->fetchAll();
                                 </td>
                                 <td class="p-4">
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold <?= $lic['status'] === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400' ?>">
-                                        <?= $lic['status'] === 'active' ? '????' : '?????' ?>
+                                        <?= $lic['status'] === 'active' ? 'فعال' : 'مسدود' ?>
                                     </span>
                                 </td>
                                 <td class="p-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <!-- Reset devices -->
-                                        <a href="licenses.php?action=reset_devices&id=<?= $lic['id'] ?>" onclick="return confirm('??? ????? ?????????? ??????? ???? ???? ?? ????? ?????? ??? ???? ???? ???? ????')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400" title="???? ?????????? ????">
+                                        <a href="licenses.php?action=reset_devices&id=<?= $lic['id'] ?>" onclick="return confirm('آیا شناسه دستگاه‌های ثبت‌شده ریست شوند تا کاربر بتواند روی گوشی جدید وارد شود؟')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400" title="ریست دستگاه‌های متصل">
                                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                                         </a>
 
                                         <!-- Toggle Status -->
-                                        <a href="licenses.php?action=toggle_status&id=<?= $lic['id'] ?>" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 <?= $lic['status'] === 'active' ? 'text-amber-400' : 'text-emerald-400' ?>" title="<?= $lic['status'] === 'active' ? '????????? ??????' : '????????? ??????' ?>">
+                                        <a href="licenses.php?action=toggle_status&id=<?= $lic['id'] ?>" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 <?= $lic['status'] === 'active' ? 'text-amber-400' : 'text-emerald-400' ?>" title="<?= $lic['status'] === 'active' ? 'مسدودسازی لایسنس' : 'فعال‌سازی لایسنس' ?>">
                                             <i data-lucide="<?= $lic['status'] === 'active' ? 'ban' : 'check' ?>" class="w-4 h-4"></i>
                                         </a>
 
                                         <!-- Extend modal opener -->
-                                        <button onclick="openExtendModal(<?= $lic['id'] ?>, '<?= $lic['license_key'] ?>')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400" title="????? ??????">
+                                        <button onclick="openExtendModal(<?= $lic['id'] ?>, '<?= $lic['license_key'] ?>')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400" title="تمدید اعتبار">
                                             <i data-lucide="calendar-plus" class="w-4 h-4"></i>
                                         </button>
 
                                         <!-- Delete -->
-                                        <a href="licenses.php?action=delete&id=<?= $lic['id'] ?>" onclick="return confirm('??? ?? ??? ???? ??? ?????? ????? ??????')" class="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-red-400" title="??? ??????">
+                                        <a href="licenses.php?action=delete&id=<?= $lic['id'] ?>" onclick="return confirm('آیا از حذف کامل این لایسنس مطمئن هستید؟')" class="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-red-400" title="حذف لایسنس">
                                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                                         </a>
                                     </div>
@@ -281,33 +281,33 @@ $licenses = $stmt->fetchAll();
             <button onclick="document.getElementById('createModal').classList.add('hidden')" class="absolute top-5 left-5 text-slate-400 hover:text-white">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
-            <h3 class="text-lg font-bold text-white mb-4">???? ?????? ???? ????</h3>
+            <h3 class="text-lg font-bold text-white mb-4">صدور لایسنس دستی جدید</h3>
             <form method="POST" class="space-y-3 text-xs">
                 <input type="hidden" name="create_license" value="1">
                 <div>
-                    <label class="block font-semibold text-slate-300 mb-1">??? ?????? *</label>
+                    <label class="block font-semibold text-slate-300 mb-1">نام خریدار *</label>
                     <input type="text" name="buyer_name" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-300 mb-1">????? ???? *</label>
+                    <label class="block font-semibold text-slate-300 mb-1">شماره تماس *</label>
                     <input type="text" name="buyer_phone" required dir="ltr" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-right">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-300 mb-1">?? ?????? ?????? (???? ??????? ?? ????? ????? ???)</label>
-                    <input type="text" name="custom_key" placeholder="????? WCAPP-TEST-0001" dir="ltr" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-center font-mono">
+                    <label class="block font-semibold text-slate-300 mb-1">کد لایسنس دلخواه (خالی بگذارید تا رندوم ساخته شود)</label>
+                    <input type="text" name="custom_key" placeholder="مثلاً WCAPP-TEST-0001" dir="ltr" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-center font-mono">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-semibold text-slate-300 mb-1">??? ?????? (???)</label>
+                        <label class="block font-semibold text-slate-300 mb-1">مدت اعتبار (روز)</label>
                         <input type="number" name="duration_days" value="30" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
-                        <span class="text-[10px] text-slate-500">??? 0 ???? ?????</span>
+                        <span class="text-[10px] text-slate-500">عدد 0 یعنی دائمی</span>
                     </div>
                     <div>
-                        <label class="block font-semibold text-slate-300 mb-1">????? ?????? ????</label>
+                        <label class="block font-semibold text-slate-300 mb-1">تعداد دستگاه مجاز</label>
                         <input type="number" name="max_devices" value="1" min="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
                     </div>
                 </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white transition mt-4">??? ? ????? ??????</button>
+                <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white transition mt-4">ثبت و ایجاد لایسنس</button>
             </form>
         </div>
     </div>
@@ -318,21 +318,21 @@ $licenses = $stmt->fetchAll();
             <button onclick="document.getElementById('extendModal').classList.add('hidden')" class="absolute top-5 left-5 text-slate-400 hover:text-white">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
-            <h3 class="text-base font-bold text-white mb-1">????? ?????? ??????</h3>
+            <h3 class="text-base font-bold text-white mb-1">تمدید اعتبار لایسنس</h3>
             <p id="extendKeyText" class="text-xs font-mono text-blue-400 mb-4"></p>
             <form method="POST" class="space-y-3 text-xs">
                 <input type="hidden" name="extend_license" value="1">
                 <input type="hidden" name="license_id" id="extendLicId">
                 <div>
-                    <label class="block font-semibold text-slate-300 mb-1">????? ??? ?????</label>
+                    <label class="block font-semibold text-slate-300 mb-1">تعداد روز تمدید</label>
                     <select name="add_days" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
-                        <option value="30">?? ??? (? ???)</option>
-                        <option value="90">?? ??? (? ???)</option>
-                        <option value="180">??? ??? (? ???)</option>
-                        <option value="365">??? ??? (? ???)</option>
+                        <option value="30">۳۰ روز (۱ ماه)</option>
+                        <option value="90">۹۰ روز (۳ ماه)</option>
+                        <option value="180">۱۸۰ روز (۶ ماه)</option>
+                        <option value="365">۳۶۵ روز (۱ سال)</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white transition mt-2">?????? ?????? ??????</button>
+                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white transition mt-2">افزایش اعتبار لایسنس</button>
             </form>
         </div>
     </div>

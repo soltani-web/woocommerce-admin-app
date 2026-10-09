@@ -5,16 +5,16 @@ require_once __DIR__ . '/../db.php';
 
 $db = getDB();
 
-// ??????? ?????
+// محاسبات آماری
 $totalIncome = $db->query("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE status = 'completed'")->fetch()['total'];
 $activeLicensesCount = $db->query("SELECT COUNT(*) as total FROM licenses WHERE status = 'active'")->fetch()['total'];
 $totalLicensesCount = $db->query("SELECT COUNT(*) as total FROM licenses")->fetch()['total'];
 $totalTxCount = $db->query("SELECT COUNT(*) as total FROM transactions WHERE status = 'completed'")->fetch()['total'];
 
-// ? ?????? ????
+// ۵ تراکنش اخیر
 $recentTx = $db->query("SELECT t.*, p.name as plan_name FROM transactions t JOIN plans p ON t.plan_id = p.id ORDER BY t.id DESC LIMIT 5")->fetchAll();
 
-// ? ?????? ????
+// ۵ لایسنس اخیر
 $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LEFT JOIN plans p ON l.plan_id = p.id ORDER BY l.id DESC LIMIT 5")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -22,7 +22,7 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>??????? ?????? - ?????? ??????</title>
+    <title>پیشخوان مدیریت - سامانه لایسنس</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/misc/Farsi-Digits/Vazirmatn-FD-font-face.css">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -37,29 +37,29 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
                 <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold">
                     <i data-lucide="key" class="w-5 h-5"></i>
                 </div>
-                <span class="font-bold text-base text-white">??? ?????? ?????? ???????</span>
+                <span class="font-bold text-base text-white">پنل مدیریت لایسنس ووکامرس</span>
             </div>
 
             <div class="flex items-center gap-2 sm:gap-4 text-sm">
                 <a href="index.php" class="px-3 py-2 rounded-xl bg-blue-600/20 text-blue-400 font-semibold flex items-center gap-2">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">???????</span>
+                    <span class="hidden sm:inline">داشبورد</span>
                 </a>
                 <a href="licenses.php" class="px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
                     <i data-lucide="key-round" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">?????????</span>
+                    <span class="hidden sm:inline">لایسنس‌ها</span>
                 </a>
                 <a href="plans.php" class="px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
                     <i data-lucide="tag" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">??????</span>
+                    <span class="hidden sm:inline">پلن‌ها</span>
                 </a>
                 <a href="transactions.php" class="px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
                     <i data-lucide="credit-card" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">?????????</span>
+                    <span class="hidden sm:inline">تراکنش‌ها</span>
                 </a>
                 <a href="logout.php" class="px-3 py-2 rounded-xl text-red-400 hover:bg-red-500/10 transition flex items-center gap-2">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">????</span>
+                    <span class="hidden sm:inline">خروج</span>
                 </a>
             </div>
         </div>
@@ -71,12 +71,12 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
         <!-- Header Title & Action -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-                <h1 class="text-2xl font-extrabold text-white">??????? ? ???? ????</h1>
-                <p class="text-xs text-slate-400 mt-1">????? ????? ?????????? ????? ? ?????????? ?????</p>
+                <h1 class="text-2xl font-extrabold text-white">پیشخوان و آمار فروش</h1>
+                <p class="text-xs text-slate-400 mt-1">خلاصه وضعیت لایسنس‌ها، درآمد و تراکنش‌های زیبال</p>
             </div>
             <a href="licenses.php?action=create" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-blue-600/20">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>????? ?????? ????</span>
+                <span>ایجاد لایسنس دستی</span>
             </a>
         </div>
 
@@ -85,8 +85,8 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl">
                 <div class="flex justify-between items-start">
                     <div>
-                        <span class="text-xs text-slate-400">????? ????? ??</span>
-                        <h3 class="text-2xl font-black text-emerald-400 mt-2"><?= number_format($totalIncome) ?> <span class="text-xs text-slate-400 font-normal">?????</span></h3>
+                        <span class="text-xs text-slate-400">مجموع درآمد کل</span>
+                        <h3 class="text-2xl font-black text-emerald-400 mt-2"><?= number_format($totalIncome) ?> <span class="text-xs text-slate-400 font-normal">تومان</span></h3>
                     </div>
                     <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl">
                         <i data-lucide="wallet" class="w-6 h-6"></i>
@@ -97,7 +97,7 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl">
                 <div class="flex justify-between items-start">
                     <div>
-                        <span class="text-xs text-slate-400">?????????? ????</span>
+                        <span class="text-xs text-slate-400">لایسنس‌های فعال</span>
                         <h3 class="text-2xl font-black text-blue-400 mt-2"><?= number_format($activeLicensesCount) ?></h3>
                     </div>
                     <div class="p-3 bg-blue-500/10 text-blue-400 rounded-2xl">
@@ -109,7 +109,7 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl">
                 <div class="flex justify-between items-start">
                     <div>
-                        <span class="text-xs text-slate-400">?? ?????????</span>
+                        <span class="text-xs text-slate-400">کل لایسنس‌ها</span>
                         <h3 class="text-2xl font-black text-purple-400 mt-2"><?= number_format($totalLicensesCount) ?></h3>
                     </div>
                     <div class="p-3 bg-purple-500/10 text-purple-400 rounded-2xl">
@@ -121,7 +121,7 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl">
                 <div class="flex justify-between items-start">
                     <div>
-                        <span class="text-xs text-slate-400">?????????? ????</span>
+                        <span class="text-xs text-slate-400">تراکنش‌های موفق</span>
                         <h3 class="text-2xl font-black text-cyan-400 mt-2"><?= number_format($totalTxCount) ?></h3>
                     </div>
                     <div class="p-3 bg-cyan-500/10 text-cyan-400 rounded-2xl">
@@ -136,13 +136,13 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
             <!-- Recent Licenses -->
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-white text-base">????? ?????????? ???? ???</h3>
-                    <a href="licenses.php" class="text-xs text-blue-400 hover:underline">?????? ???</a>
+                    <h3 class="font-bold text-white text-base">آخرین لایسنس‌های صادر شده</h3>
+                    <a href="licenses.php" class="text-xs text-blue-400 hover:underline">مشاهده همه</a>
                 </div>
 
                 <div class="space-y-3">
                     <?php if (empty($recentLicenses)): ?>
-                        <p class="text-xs text-slate-500 text-center py-6">???? ??? ??????? ??? ???? ???.</p>
+                        <p class="text-xs text-slate-500 text-center py-6">هنوز هیچ لایسنسی ثبت نشده است.</p>
                     <?php else: ?>
                         <?php foreach ($recentLicenses as $lic): 
                             $devices = json_decode($lic['registered_devices'] ?? '[]', true) ?: [];
@@ -152,14 +152,14 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
                                     <div class="flex items-center gap-2">
                                         <span class="font-mono text-xs font-bold text-blue-400"><?= $lic['license_key'] ?></span>
                                         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold <?= $lic['status'] === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400' ?>">
-                                            <?= $lic['status'] === 'active' ? '????' : '?????' ?>
+                                            <?= $lic['status'] === 'active' ? 'فعال' : 'مسدود' ?>
                                         </span>
                                     </div>
                                     <p class="text-xs text-slate-300 mt-1"><?= htmlspecialchars($lic['buyer_name']) ?> <span class="text-slate-500">(<?= htmlspecialchars($lic['buyer_phone']) ?>)</span></p>
                                 </div>
                                 <div class="text-left text-xs text-slate-400">
-                                    <span><?= count($devices) ?>/<?= $lic['max_devices'] ?> ??????</span>
-                                    <span class="block text-[11px] text-slate-500 mt-0.5"><?= $lic['expires_at'] ? date('Y/m/d', strtotime($lic['expires_at'])) : '?????' ?></span>
+                                    <span><?= count($devices) ?>/<?= $lic['max_devices'] ?> دستگاه</span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5"><?= $lic['expires_at'] ? date('Y/m/d', strtotime($lic['expires_at'])) : 'دائمی' ?></span>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -170,24 +170,24 @@ $recentLicenses = $db->query("SELECT l.*, p.name as plan_name FROM licenses l LE
             <!-- Recent Transactions -->
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-white text-base">????? ?????????? ?????</h3>
-                    <a href="transactions.php" class="text-xs text-blue-400 hover:underline">?????? ???</a>
+                    <h3 class="font-bold text-white text-base">آخرین تراکنش‌های درگاه</h3>
+                    <a href="transactions.php" class="text-xs text-blue-400 hover:underline">مشاهده همه</a>
                 </div>
 
                 <div class="space-y-3">
                     <?php if (empty($recentTx)): ?>
-                        <p class="text-xs text-slate-500 text-center py-6">???? ??????? ????? ???? ???.</p>
+                        <p class="text-xs text-slate-500 text-center py-6">هنوز تراکنشی انجام نشده است.</p>
                     <?php else: ?>
                         <?php foreach ($recentTx as $tx): ?>
                             <div class="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-between">
                                 <div>
                                     <p class="font-bold text-xs text-white"><?= htmlspecialchars($tx['buyer_name']) ?> - <span class="text-slate-400 font-normal"><?= htmlspecialchars($tx['plan_name']) ?></span></p>
-                                    <p class="text-[11px] font-mono text-cyan-400 mt-0.5">??????: <?= $tx['ref_number'] ?: $tx['track_id'] ?></p>
+                                    <p class="text-[11px] font-mono text-cyan-400 mt-0.5">پیگیری: <?= $tx['ref_number'] ?: $tx['track_id'] ?></p>
                                 </div>
                                 <div class="text-left">
-                                    <span class="font-bold text-xs text-emerald-400"><?= number_format($tx['amount']) ?> ?????</span>
+                                    <span class="font-bold text-xs text-emerald-400"><?= number_format($tx['amount']) ?> تومان</span>
                                     <span class="block text-[10px] <?= $tx['status'] === 'completed' ? 'text-emerald-400' : 'text-amber-400' ?> mt-0.5">
-                                        <?= $tx['status'] === 'completed' ? '????' : $tx['status'] ?>
+                                        <?= $tx['status'] === 'completed' ? 'موفق' : $tx['status'] ?>
                                     </span>
                                 </div>
                             </div>

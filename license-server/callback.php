@@ -15,9 +15,9 @@ $errorMessage = '';
 $licenseData = null;
 
 if (!$transaction) {
-    $errorMessage = '?????? ?? ??? ????? ???? ???.';
+    $errorMessage = 'تراکنش با این شناسه یافت نشد.';
 } elseif ($success == 1) {
-    // ????? ?????? ?? ???? ?????
+    // تایید تراکنش در سرور زیبال
     $verifyData = [
         'merchant' => ZIBAL_MERCHANT,
         'trackId' => $trackId,
@@ -37,10 +37,10 @@ if (!$transaction) {
     $resData = json_decode($response, true);
 
     if (isset($resData['result']) && in_array($resData['result'], [100, 201])) {
-        $refNumber = $resData['refNumber'] ?? ($resData['cardNumber'] ?? '????');
+        $refNumber = $resData['refNumber'] ?? ($resData['cardNumber'] ?? 'موفق');
         $cardNumber = $resData['cardNumber'] ?? '';
 
-        // ??? ?????? ???? ???? ???? ????? ????? ??
+        // اگر لایسنس قبلا صادر نشده باشد، ایجاد کن
         if ($transaction['status'] !== 'completed' || empty($transaction['license_id'])) {
             $licenseKey = generateLicenseKey();
             $durationDays = intval($transaction['duration_days']);
@@ -49,7 +49,7 @@ if (!$transaction) {
                 $expiresAt = date('Y-m-d H:i:s', strtotime("+{$durationDays} days"));
             }
 
-            // ??? ??????
+            // درج لایسنس
             $licStmt = $db->prepare("INSERT INTO licenses (license_key, buyer_name, buyer_phone, buyer_email, plan_id, max_devices, expires_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'active')");
             $licStmt->execute([
                 $licenseKey,
@@ -62,7 +62,7 @@ if (!$transaction) {
             ]);
             $licenseId = $db->lastInsertId();
 
-            // ????????? ??????
+            // بروزرسانی تراکنش
             $updTx = $db->prepare("UPDATE transactions SET status = 'completed', ref_number = ?, card_number = ?, license_id = ? WHERE id = ?");
             $updTx->execute([$refNumber, $cardNumber, $licenseId, $transaction['id']]);
 
@@ -70,13 +70,13 @@ if (!$transaction) {
                 'key' => $licenseKey,
                 'name' => $transaction['buyer_name'],
                 'plan' => $transaction['plan_name'],
-                'expires_at' => $expiresAt ? date('Y/m/d', strtotime($expiresAt)) : '??????? (?????)',
+                'expires_at' => $expiresAt ? date('Y/m/d', strtotime($expiresAt)) : 'نامحدود (دائمی)',
                 'ref' => $refNumber,
                 'devices' => $transaction['max_devices']
             ];
             $isVerified = true;
         } else {
-            // ???? ???? ???? ??????? ?????? ?? ?????
+            // قبلا فعال شده، اطلاعات لایسنس را بخوان
             $licStmt = $db->prepare("SELECT * FROM licenses WHERE id = ?");
             $licStmt->execute([$transaction['license_id']]);
             $lic = $licStmt->fetch();
@@ -84,19 +84,19 @@ if (!$transaction) {
                 'key' => $lic['license_key'],
                 'name' => $lic['buyer_name'],
                 'plan' => $transaction['plan_name'],
-                'expires_at' => $lic['expires_at'] ? date('Y/m/d', strtotime($lic['expires_at'])) : '??????? (?????)',
+                'expires_at' => $lic['expires_at'] ? date('Y/m/d', strtotime($lic['expires_at'])) : 'نامحدود (دائمی)',
                 'ref' => $transaction['ref_number'],
                 'devices' => $lic['max_devices']
             ];
             $isVerified = true;
         }
     } else {
-        $errorMessage = $resData['message'] ?? '?????? ???? ????? ????? ????? ??? (?? ???: ' . ($resData['result'] ?? '') . ')';
+        $errorMessage = $resData['message'] ?? 'پرداخت توسط درگاه زیبال تایید نشد (کد خطا: ' . ($resData['result'] ?? '') . ')';
         $updTx = $db->prepare("UPDATE transactions SET status = 'failed' WHERE id = ?");
         $updTx->execute([$transaction['id']]);
     }
 } else {
-    $errorMessage = '?????? ??? ?? ?? ?????? ???.';
+    $errorMessage = 'پرداخت لغو شد یا ناموفق بود.';
     if ($transaction) {
         $updTx = $db->prepare("UPDATE transactions SET status = 'canceled' WHERE id = ?");
         $updTx->execute([$transaction['id']]);
@@ -108,7 +108,7 @@ if (!$transaction) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>????? ?????? - <?= htmlspecialchars(SITE_NAME) ?></title>
+    <title>نتیجه پرداخت - <?= htmlspecialchars(SITE_NAME) ?></title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/misc/Farsi-Digits/Vazirmatn-FD-font-face.css">
@@ -125,41 +125,41 @@ if (!$transaction) {
                 <i data-lucide="check-circle-2" class="w-9 h-9"></i>
             </div>
             
-            <h2 class="text-2xl font-extrabold text-white">?????? ? ????????? ????!</h2>
-            <p class="text-xs text-slate-400 mt-1">?? ?????? ??? ???? ?? ? ????? ??????? ?? ???????? ???.</p>
+            <h2 class="text-2xl font-extrabold text-white">پرداخت و فعال‌سازی موفق!</h2>
+            <p class="text-xs text-slate-400 mt-1">کد لایسنس شما صادر شد و آماده استفاده در اپلیکیشن است.</p>
 
             <!-- License Key Box -->
             <div class="my-6 p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-blue-500/50 text-center">
-                <span class="text-xs text-slate-400 block mb-1">?? ?????? ??????? ???:</span>
+                <span class="text-xs text-slate-400 block mb-1">کد لایسنس اختصاصی شما:</span>
                 <div class="flex items-center justify-center gap-3">
                     <span id="licenseKeyText" class="font-mono text-xl sm:text-2xl font-bold tracking-widest text-blue-400 select-all"><?= $licenseData['key'] ?></span>
-                    <button onclick="copyLicense()" class="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition" title="??? ??????">
+                    <button onclick="copyLicense()" class="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition" title="کپی لایسنس">
                         <i data-lucide="copy" class="w-4 h-4"></i>
                     </button>
                 </div>
-                <span id="copyFeedback" class="text-[11px] text-emerald-400 hidden mt-1 block">?? ?????? ?? ????????? ??? ??!</span>
+                <span id="copyFeedback" class="text-[11px] text-emerald-400 hidden mt-1 block">کد لایسنس در کلیپ‌بورد کپی شد!</span>
             </div>
 
             <!-- Details -->
             <div class="space-y-2.5 text-xs text-slate-300 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 text-right mb-6">
                 <div class="flex justify-between">
-                    <span class="text-slate-400">??? ??????:</span>
+                    <span class="text-slate-400">نام خریدار:</span>
                     <span class="font-semibold text-white"><?= htmlspecialchars($licenseData['name']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-slate-400">??? ??????:</span>
+                    <span class="text-slate-400">نوع اشتراک:</span>
                     <span class="font-semibold text-white"><?= htmlspecialchars($licenseData['plan']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-slate-400">????? ?????:</span>
+                    <span class="text-slate-400">تاریخ انقضا:</span>
                     <span class="font-semibold text-white"><?= $licenseData['expires_at'] ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-slate-400">?????????? ????:</span>
-                    <span class="font-semibold text-white"><?= $licenseData['devices'] ?> ??????</span>
+                    <span class="text-slate-400">دستگاه‌های مجاز:</span>
+                    <span class="font-semibold text-white"><?= $licenseData['devices'] ?> دستگاه</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-slate-400">????? ?????? ?????:</span>
+                    <span class="text-slate-400">شماره پیگیری زیبال:</span>
                     <span class="font-mono font-semibold text-cyan-400"><?= $licenseData['ref'] ?></span>
                 </div>
             </div>
@@ -168,10 +168,10 @@ if (!$transaction) {
             <div class="space-y-3">
                 <a href="<?= htmlspecialchars(APP_DOWNLOAD_URL) ?>" target="_blank" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition">
                     <i data-lucide="download" class="w-5 h-5"></i>
-                    <span>?????? ?????? ???? ???????? (APK)</span>
+                    <span>دانلود مستقیم فایل اپلیکیشن (APK)</span>
                 </a>
                 <a href="index.php" class="inline-block text-xs text-slate-400 hover:text-white transition">
-                    ?????? ?? ???? ????
+                    بازگشت به صفحه اصلی
                 </a>
             </div>
 
@@ -180,13 +180,13 @@ if (!$transaction) {
                 <i data-lucide="alert-circle" class="w-9 h-9"></i>
             </div>
             
-            <h2 class="text-2xl font-extrabold text-white">?????? ?????? ???</h2>
+            <h2 class="text-2xl font-extrabold text-white">پرداخت ناموفق بود</h2>
             <p class="text-sm text-red-400 mt-2"><?= htmlspecialchars($errorMessage) ?></p>
 
             <div class="mt-8">
                 <a href="index.php" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold inline-flex items-center gap-2 transition">
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    <span>???? ???? ???? ????</span>
+                    <span>تلاش مجدد برای خرید</span>
                 </a>
             </div>
         <?php endif; ?>

@@ -1,8 +1,16 @@
 <?php
 require_once __DIR__ . '/db.php';
-$db = getDB();
-$plansStmt = $db->query("SELECT * FROM plans WHERE is_active = 1 ORDER BY price ASC");
-$plans = $plansStmt->fetchAll();
+
+$plans = [];
+$dbError = '';
+
+try {
+    $db = getDB();
+    $plansStmt = $db->query("SELECT * FROM plans WHERE is_active = 1 ORDER BY price ASC");
+    $plans = $plansStmt->fetchAll();
+} catch (Throwable $e) {
+    $dbError = $e->getMessage();
+}
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -69,6 +77,12 @@ $plans = $plansStmt->fetchAll();
         </div>
     </header>
 
+    <?php if (!empty($dbError)): ?>
+        <div class="max-w-4xl mx-auto mt-4 p-4 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs text-center">
+            ⚠️ وضعیت پایگاه داده: <?= htmlspecialchars($dbError) ?>
+        </div>
+    <?php endif; ?>
+
     <!-- Hero Section -->
     <section class="relative pt-16 pb-20 px-4 max-w-7xl mx-auto text-center">
         <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-950/60 border border-blue-500/30 text-blue-400 text-xs font-semibold mb-6">
@@ -119,7 +133,7 @@ $plans = $plansStmt->fetchAll();
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <?php foreach ($plans as $plan): 
-                $features = json_decode($plan['features'] ?? '[]', true);
+                $features = json_decode($plan['features'] ?? '[]', true) ?: [];
                 $isPopular = $plan['is_popular'] == 1;
             ?>
             <div class="relative rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 <?= $isPopular ? 'bg-gradient-to-b from-blue-950/80 to-slate-900 border-2 border-blue-500/80 shadow-xl shadow-blue-500/10' : 'glow-card' ?>">

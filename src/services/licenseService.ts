@@ -1,11 +1,11 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import * as Application from 'expo-application';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // آدرس دامنه هاست اختصاصی شما که اسکریپت لایسنس روی آن نصب شده است
-// به عنوان مثال: https://license.yourdomain.com یا https://yourdomain.com/license-server
-export const LICENSE_SERVER_URL = 'https://license.yourdomain.com';
+// به عنوان مثال: https://wp-negar.ir/license یا https://yourdomain.com/license-server
+export const LICENSE_SERVER_URL = 'https://wp-negar.ir/license';
 
 const STORAGE_KEY_LICENSE = '@app_license_data';
 
